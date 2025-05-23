@@ -194,18 +194,14 @@ class AudioSessionManager {
         )
 
         do {
+            print("Attempting to override output to speaker")
             try audioSession.setCategory(
-                category, mode: .moviePlayback, options: canAllowMixing ? options : []
+                category, mode: .default, options: canAllowMixing ? options : []
             )
-
-            // Configure audio port
-            if isAnyPlayerUsingEarpiece, audioSession.category == .playAndRecord {
-                #if os(iOS) || os(visionOS)
-                    try audioSession.overrideOutputAudioPort(.speaker)
-                #endif
-            } else {
-                try audioSession.overrideOutputAudioPort(.none)
-            }
+            #if os(iOS) || os(visionOS)
+                try audioSession.overrideOutputAudioPort(.speaker)
+                print("Successfully overrode output port to speaker")
+            #endif
         } catch {
             print("Failed to configure audio session: \(error.localizedDescription)")
         }
@@ -224,7 +220,7 @@ class AudioSessionManager {
             print(
                 "Warning: Conflicting ignoreSilentSwitch settings found (obey vs ignore) - defaulting to ignore"
             )
-            return .playback
+            return .playAndRecord
         }
 
         // PiP, background playback, or notification controls require playback category
@@ -241,7 +237,7 @@ class AudioSessionManager {
                 )
             }
 
-            return .playback
+            return .playAndRecord
         }
 
         // Earpiece requires playAndRecord
@@ -256,11 +252,11 @@ class AudioSessionManager {
 
         // Honor silent switch if requested
         if silentSwitchObey {
-            return .ambient
+            return .playAndRecord
         }
 
         // Default to playback for most cases
-        return .playback
+        return .playAndRecord
     }
 
     private func activateAudioSession() {
