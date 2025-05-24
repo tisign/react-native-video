@@ -276,21 +276,33 @@ class AudioSessionManager {
         if !isAudioSessionActive {
             return
         }
+        #if os(iOS) || os(visionOS)
+            do {
+                try AVAudioSession.sharedInstance().overrideOutputAudioPort(.none)
+                print("Successfully restored output port to default")
+            } catch {
+                print("Failed to restore output port: \(error.localizedDescription)")
+            }
 
         do {
             try AVAudioSession.sharedInstance().setActive(
                 false, options: .notifyOthersOnDeactivation
             )
             isAudioSessionActive = false
+            print("Successfully deactivated audio session")
         } catch {
             print("Failed to deactivate audio session: \(error.localizedDescription)")
         }
+        #endif
     }
 
     // MARK: - Notification Handlers
 
     @objc
     private func handleAudioSessionInterruption(notification: Notification) {
+        if !isAudioSessionActive {
+            return
+        }
         guard let userInfo = notification.userInfo,
               let typeValue = userInfo[AVAudioSessionInterruptionTypeKey] as? UInt,
               let type = AVAudioSession.InterruptionType(rawValue: typeValue)
@@ -319,6 +331,9 @@ class AudioSessionManager {
 
     @objc
     private func handleAudioRouteChange(notification: Notification) {
+        if !isAudioSessionActive {
+            return
+        }
         guard let userInfo = notification.userInfo,
               let reasonValue = userInfo[AVAudioSessionRouteChangeReasonKey] as? UInt,
               let reason = AVAudioSession.RouteChangeReason(rawValue: reasonValue)
