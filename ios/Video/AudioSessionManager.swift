@@ -55,12 +55,21 @@ class AudioSessionManager {
         videoViews.remove(view)
         updateAudioSessionConfiguration()
 
-        if videoViews.allObjects.isEmpty && !remoteControlEventsActive {
             deactivateAudioSession()
-        }
     }
 
     func updateAudioSessionConfiguration() {
+
+        guard isAudioSessionActive else { 
+            return 
+        }
+
+            // Also check if we have any registered views
+        guard !videoViews.allObjects.isEmpty else {
+            deactivateAudioSession()
+            return
+        }
+
         // Activate audio session if needed
         let isAnyPlayerPlaying = videoViews.allObjects.contains { view in
             return !view.isMuted() && view._player != nil && view._player?.rate != 0
@@ -123,6 +132,10 @@ class AudioSessionManager {
     }
 
     private func configureAudioSession() {
+        guard !videoViews.allObjects.isEmpty else {
+            return
+        }
+
         let audioSession = AVAudioSession.sharedInstance()
         var options: AVAudioSession.CategoryOptions = []
 
